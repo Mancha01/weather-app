@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CityWithWeather, LoadingState } from "../types";
+import { City, CityWithWeather, LoadingState } from "../types";
 
 interface WeatherState {
-  cities: CityWithWeather[];
+  cities: City[];
   loading: LoadingState;
   searchResults: CityWithWeather[];
   currentLocation: CityWithWeather | null;
@@ -19,7 +19,7 @@ const weatherSlice = createSlice({
   name: "weather",
   initialState,
   reducers: {
-    setCities: (state, action: PayloadAction<CityWithWeather[]>) => {
+    setCities: (state, action: PayloadAction<City[]>) => {
       state.cities = action.payload;
     },
     updateCityWeather: (

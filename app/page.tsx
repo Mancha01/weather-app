@@ -1,65 +1,237 @@
-import Image from "next/image";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { setCities, removeCity } from "@/store/weatherSlice";
+import { toggleFavorite } from "@/store/favoritesSlice";
+import { Layout } from "@/components/Layout";
+import { SearchBar } from "@/components/SearchBar";
+import { CityList } from "@/components/CityList";
+import { Button, ErrorMessage } from "@/components/ui";
+import { LARGEST_CITIES } from "@/utils/constants";
+import { fetchWeatherByCity } from "@/services/weatherApi";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { reverseGeocode } from "@/services/locationApi";
+import { City } from "@/types/city";
+import { GeonamesPlace } from "@/types/city";
+
+// Disable static generation for this page
+export const dynamic = "force-dynamic";
 
 export default function Home() {
+  const dispatch = useDispatch();
+  const cities = useSelector((state: RootState) => state.weather?.cities || []);
+  const favorites = useSelector(
+    (state: RootState) => state.favorites?.favorites || []
+  );
+  const {
+    position,
+    loading: geoLoading,
+    error: geoError,
+    requestLocation,
+  } = useGeolocation();
+
+  const [temperatures, setTemperatures] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+
+  // Initialize with 15 largest cities
+  useEffect(() => {
+    if (cities.length === 0) {
+      dispatch(setCities(LARGEST_CITIES));
+    }
+  }, [dispatch, cities.length]);
+
+  // Fetch weather for all cities
+  useEffect(() => {
+    const fetchAllWeather = async () => {
+      if (cities.length === 0) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const tempData: Record<string, number> = {};
+
+        await Promise.all(
+          cities.map(async (city: City) => {
+            try {
+              const weather = await fetchWeatherByCity(city.name);
+              tempData[city.id] = weather.current.temperature;
+            } catch (err) {
+              console.error(`Failed to fetch weather for ${city.name}:`, err);
+            }
+          })
+        );
+
+        setTemperatures(tempData);
+      } catch {
+        setError("Failed to fetch weather data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllWeather();
+  }, [cities]);
+
+  // Handle geolocation
+  useEffect(() => {
+    const addUserLocation = async () => {
+      if (!position) return;
+
+      try {
+        const place = await reverseGeocode(
+          position.latitude,
+          position.longitude
+        );
+        if (place) {
+          const userCity: City = {
+            id: `user-location-${place.geonameId}`,
+            name: place.name,
+            country: place.countryName,
+            lat: parseFloat(place.lat),
+            lon: parseFloat(place.lng),
+            isFavorite: false,
+          };
+
+          // Add user location to the list if not already present
+          if (!cities.find((c: City) => c.id === userCity.id)) {
+            dispatch(setCities([userCity, ...cities]));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to get user location:", err);
+      }
+    };
+
+    addUserLocation();
+  }, [position, cities, dispatch]);
+
+  const handleCitySearch = (place: GeonamesPlace) => {
+    const newCity: City = {
+      id: `search-${place.geonameId}`,
+      name: place.name,
+      country: place.countryName,
+      lat: parseFloat(place.lat),
+      lon: parseFloat(place.lng),
+      isFavorite: false,
+    };
+
+    // Add city if not already in list
+    if (!cities.find((c: City) => c.id === newCity.id)) {
+      dispatch(setCities([...cities, newCity]));
+    }
+  };
+
+  const handleToggleFavorite = (cityId: string) => {
+    dispatch(toggleFavorite(cityId));
+  };
+
+  const handleRemoveCity = (cityId: string) => {
+    dispatch(removeCity(cityId));
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <Layout>
+      <div className="space-y-8">
+        {/* Header Section */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Weather Dashboard
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-2 text-gray-600">
+            View current weather for cities around the world
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Location Prompt */}
+        {showLocationPrompt && !position && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <svg
+                  className="h-6 w-6 text-blue-600 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Get weather for your location
+                  </h3>
+                  <p className="mt-1 text-sm text-blue-700">
+                    Allow location access to see weather for your current city
+                  </p>
+                  <div className="mt-3">
+                    <Button
+                      size="sm"
+                      onClick={requestLocation}
+                      isLoading={geoLoading}
+                    >
+                      Enable Location
+                    </Button>
+                  </div>
+                  {geoError && (
+                    <p className="mt-2 text-sm text-red-600">{geoError}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLocationPrompt(false)}
+                className="text-blue-400 hover:text-blue-500"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar */}
+        <div>
+          <SearchBar onCitySelect={handleCitySearch} />
         </div>
-      </main>
-    </div>
+
+        {/* Error Display */}
+        {error && <ErrorMessage message={error} />}
+
+        {/* Cities List */}
+        <CityList
+          cities={cities}
+          favorites={favorites}
+          temperatures={temperatures}
+          loading={loading}
+          onToggleFavorite={handleToggleFavorite}
+          onRemoveCity={handleRemoveCity}
+        />
+      </div>
+    </Layout>
   );
 }

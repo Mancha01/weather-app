@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.worldweatheronline.com",
+        pathname: "/images/wsymbols01_png_64/**",
+      },
+      {
+        protocol: "http",
+        hostname: "cdn.worldweatheronline.com",
+        pathname: "/images/wsymbols01_png_64/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
