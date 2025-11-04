@@ -45,7 +45,7 @@ export const searchCities = async (query: string): Promise<GeonamesPlace[]> => {
           maxRows: 10,
           username: GEONAMES_USERNAME,
           featureClass: "P", // populated places
-          style: "SHORT",
+          style: "FULL",
         },
       }
     );

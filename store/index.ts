@@ -1,8 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
+import weatherReducer from "./weatherSlice";
+import favoritesReducer from "./favoritesSlice";
+import notesReducer from "./notesSlice";
 
 export const store = configureStore({
   reducer: {
-    // Add reducers here as we create slices
+    weather: weatherReducer,
+    favorites: favoritesReducer,
+    notes: notesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

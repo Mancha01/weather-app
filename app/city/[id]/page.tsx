@@ -33,10 +33,6 @@ const NotesSection = dynamic(
   }
 );
 
-// Disable static generation for this page
-export const dynamicParams = true;
-export const revalidate = 0;
-
 export default function CityPage() {
   const params = useParams();
   const router = useRouter();

@@ -2,6 +2,13 @@ import { WeatherResponse } from "../types/weather";
 import { CACHE_DURATION } from "../utils/constants";
 import { getCachedCities, setCachedCities } from "../utils/storage";
 
+/**
+ * Retrieves cached weather data for a city if available and not expired
+ * @param cityId - Unique identifier for the city
+ * @returns Cached weather data or null if not found/expired
+ * @example
+ * const cachedWeather = getCachedWeather("lagos-nigeria");
+ */
 export const getCachedWeather = (cityId: string): WeatherResponse | null => {
   try {
     const cache = getCachedCities();
@@ -23,6 +30,13 @@ export const getCachedWeather = (cityId: string): WeatherResponse | null => {
   }
 };
 
+/**
+ * Caches weather data for a city with current timestamp
+ * @param cityId - Unique identifier for the city
+ * @param data - Weather data to cache
+ * @example
+ * setCachedWeather("lagos-nigeria", weatherResponse);
+ */
 export const setCachedWeather = (
   cityId: string,
   data: WeatherResponse

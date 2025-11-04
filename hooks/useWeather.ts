@@ -13,6 +13,17 @@ interface UseWeatherState {
   error: string | null;
 }
 
+/**
+ * Custom hook to fetch and manage weather data for a city
+ * Implements caching to minimize API calls and support offline usage
+ * @param city - City object containing name and coordinates, or null
+ * @returns Object containing weather data, loading state, and error message
+ * @example
+ * const { data, loading, error } = useWeather(selectedCity);
+ * if (loading) return <Spinner />;
+ * if (error) return <Error message={error} />;
+ * return <WeatherDisplay weather={data} />;
+ */
 export const useWeather = (city: City | null): UseWeatherState => {
   const [state, setState] = useState<UseWeatherState>({
     data: null,

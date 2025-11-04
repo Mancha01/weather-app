@@ -23,9 +23,9 @@ export interface GeonamesPlace {
   geonameId: number;
   name: string;
   toponymName: string;
-  countryName: string;
+  countryName?: string;
   countryCode: string;
-  adminName1: string;
+  adminName1?: string;
   lat: string;
   lng: string;
   population: number;

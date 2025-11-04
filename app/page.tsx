@@ -111,18 +111,24 @@ export default function Home() {
   }, [position, cities, dispatch]);
 
   const handleCitySearch = (place: GeonamesPlace) => {
+    console.log("Handling city search:", place);
     const newCity: City = {
       id: `search-${place.geonameId}`,
       name: place.name,
-      country: place.countryName,
+      country: place.countryName || place.countryCode,
       lat: parseFloat(place.lat),
       lon: parseFloat(place.lng),
       isFavorite: false,
     };
 
+    console.log("New city created:", newCity);
+
     // Add city if not already in list
     if (!cities.find((c: City) => c.id === newCity.id)) {
+      console.log("Adding city to list");
       dispatch(setCities([...cities, newCity]));
+    } else {
+      console.log("City already in list");
     }
   };
 

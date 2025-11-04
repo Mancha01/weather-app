@@ -44,6 +44,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onCitySelect }) => {
   }, [query]);
 
   const handleSelect = (place: GeonamesPlace) => {
+    console.log("City selected:", place);
     onCitySelect(place);
     setQuery("");
     setResults([]);
